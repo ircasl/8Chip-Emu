@@ -2,6 +2,7 @@
 // A simple 8 Chip emulator using GLFW and an interpreter
 
 #include <stdio.h>
+#include "chip8.h"
 
 #define GLFW_DLL //Define this MACRO so that GLFW know that the functions are defined in a dll
 #include <glfw3.h>
@@ -30,15 +31,17 @@ int main(int argc, char** argv)
 {
 	//Comment out for now to test keyboard events
 
-	//if (argc < 2) // See if we received atleast a aplication to run
-	//{
-	//	printf("usage: 8chip-emu.exe chip8app\n\n");
-	//	return 1;
-	//}
+	if (argc < 2) // See if we received atleast a aplication to run
+	{
+		printf("usage: 8chip-emu.exe chip8app\n\n");
+		return 1;
+	}
+
+	chip8 CPU;
 
 	//// Call out Chip8 interpreter so that it loads the game to memory
-	//if (!Chip8.loadApplication(argv[1]))
-	//	return -1; //If this function doesn't return true there was an error
+	if (!CPU.loadApplication(argv[1]))
+		return -1; //if this function doesn't return true there was an error
 
 	//Let's now setup OpenGL
 	GLFWwindow* window;
