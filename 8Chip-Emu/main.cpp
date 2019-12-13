@@ -71,12 +71,23 @@ int main(int argc, char** argv)
 	while (!glfwWindowShouldClose(window))
 	{
 		// Render here 
-		glClear(GL_COLOR_BUFFER_BIT);
 
-		//Do stuff here
+		// Do stuff here
+		CPU.emulateCycle(); //Let's advance a cycle
+		
+		if (CPU.DrawFlag == true) {
+			glClear(GL_COLOR_BUFFER_BIT);
 
-		// Swap front and back buffers 
-		glfwSwapBuffers(window);
+			//For now let's use the debug render
+			CPU.debugRender(); 
+
+			// Swap front and back buffers 
+			glfwSwapBuffers(window);
+
+			// End of frame
+			CPU.DrawFlag = false;
+		}
+
 		// Poll for and process events 
 		glfwPollEvents();
 	}
