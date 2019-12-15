@@ -94,13 +94,45 @@ void chip8::emulateCycle()
 	// Execute Opcode
 	switch (OPCode & 0xF000) //Let's distinguish OPCodes by the most significant value first and inside the multiple cases if needed create more switch cases
 	{
+		case 0x0000:
+			switch (OPCode & 0x00FF)
+			{
+				case 0x00EE: // 00EE: Returns from a subroutine.
+					SP--; // 16 levels of stack, decrease stack pointer to prevent overwrite
+					PC = Stack[SP]; //Set the program counter to the saved value on the stack
+					PC += 2; //Skip to the next instruction
+					break;
+				case 0x00E0: // 00E0: Clears the screen.
+					memset(GFX, 0, sizeof(GFX)); //GFX[2048] 
+					DrawFlag = true; //Let's set this so that the draw logic knows that it needs to redraw
+					PC += 2;
+					break;
+				default:
+					// TODO: Add 0NNN
+					printf("Unknown opcode: 0x%X\n", OPCode);
+					break;
+			}
+			break;
+		case 0x1000:// 1NNN: Jumps to address NNN.
+			PC = OPCode & 0x0FFF;
+			break;
 		case 0x2000:// 0x2NNN: Calls subroutine at NNN.
 			Stack[SP] = PC; // Let's save the current adress to the stack
 			SP++; // Increment the stack pointer
-			PC = OPCode & 0x0FFF; // Let's save the only the NNN values to the PC
+			PC = OPCode & 0x0FFF; // Let's save the only the NNN value to the PC
+			break;
+		case 0x3000:// 3XNN: Skips the next instruction if VX equals NN. (Usually the next instruction is a jump to skip a code block)
+			if (V[(OPCode & 0x0F00) >> 8] == (OPCode & 0x00FF))
+				PC += 4;
+			else // We still need to read the next if instruction even if VX != NN
+				PC += 2;
 			break;
 		case 0x6000:// 6XNN: Sets VX to NN.
 			V[(OPCode & 0x0F00) >> 8] = OPCode & 0x00FF; //Don't forget to shift the value 8 bitsso that it represents the value that we want
+			PC += 2;
+			break;
+		case 0x7000:// 7XNN: Adds NN to VX. (Carry flag is not changed)
+			V[(OPCode & 0x0F00) >> 8] += OPCode & 0x00FF;
 			PC += 2;
 			break;
 		case 0xA000: // ANNN: Sets I to the address NNN.
@@ -111,35 +143,38 @@ void chip8::emulateCycle()
 					 // Each row of 8 pixels is read as bit-coded starting from memory location I;
 					 // I value doesn’t change after the execution of this instruction.
 					 // As described above, VF is set to 1 if any screen pixels are flipped from set to unset when the sprite is drawn, and to 0 if that doesn’t happen 
-			// Get the VX and VY coordinate
-			unsigned short x = V[(OPCode & 0x0F00) >> 8]; 
-			unsigned short y = V[(OPCode & 0x00F0) >> 4];
-			//Get height
-			unsigned short height = OPCode & 0x000F;
-			//Pixel that we get from memory
-			unsigned short pixel;
-
-			//Let's assume that VF won't be changed
-			V[0xF] = 0;
-
-			for (int yLine = 0; yLine < height; yLine++)
 			{
-				pixel = Memory[I + yLine]; //Get the byte representing the pixel
-				for (int xPos = 0; xPos < 8; xPos++)
+				// Get the VX and VY coordinate
+				uint16_t x = V[(OPCode & 0x0F00) >> 8];
+				uint16_t y = V[(OPCode & 0x00F0) >> 4];
+				//Get height
+				uint16_t height = OPCode & 0x000F;
+				//Pixel that we get from memory
+				uint16_t pixel;
+
+				//Let's assume that VF won't be changed
+				V[0xF] = 0;
+
+				for (int yLine = 0; yLine < height; yLine++)
 				{
-					if ((pixel & (0x80 >> xPos)) != 0) // Test values from left to right using 0x80 and a bitshift to the right
+					pixel = Memory[I + yLine]; // Get the byte representing the pixel
+												// the pixel is enconded for example if screen is clear 11110000 will give ****EEEE, E being blank
+					for (int xLine = 0; xLine < 8; xLine++)
 					{
-						if (GFX[(x + xPos + ((y + yLine) * 64))] == 1)
+						if ((pixel & (0x80 >> xLine)) != 0) // Test values from left to right by using 0x80 and a bitshift to the right
 						{
-							V[0xF] = 1; //A pixel as been changed from set to unset
+							if (GFX[(x + xLine + ((y + yLine) * 64))] == 1)
+							{
+								V[0xF] = 1; //A pixel as been changed from set to unset
+							}
+							GFX[x + xLine + ((y + yLine) * 64)] ^= 1; //XOR operation on the current value inside the VRAM
 						}
-						GFX[x + xPos + ((y + yLine) * 64)] ^= 1; //XOR operation on the current value inside the VRAM
 					}
 				}
-			}
 
-			DrawFlag = true;
-			PC += 2;
+				DrawFlag = true;
+				PC += 2;
+			}
 			break;
 		default:
 			printf("Unknown opcode: 0x%X\n", OPCode);
