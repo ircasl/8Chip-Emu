@@ -110,7 +110,6 @@ void chip8::emulateCycle()
 				default:
 					// TODO: Add 0NNN
 					printf("Unknown opcode: 0x%X\n", OPCode);
-					break;
 			}
 			break;
 		case 0x1000:// 1NNN: Jumps to address NNN.
@@ -179,6 +178,18 @@ void chip8::emulateCycle()
 		case 0xF000:
 			switch (OPCode & 0x00FF)
 			{
+				case 0x0007:// FX07: Sets VX to the value of the delay timer.
+					V[(OPCode & 0x0F00) >> 8] = DelayTimer;
+					PC += 2;
+					break;
+				case 0x0015:// FX15: Sets the delay timer to VX.
+					DelayTimer = V[(OPCode & 0x0F00) >> 8];
+					PC += 2;
+					break;
+				case 0x0029:// FX29: Sets I to the location of the sprite for the character in VX. Characters 0-F (in hexadecimal) are represented by a 4x5 font.
+					I = V[((OPCode & 0x0F00) >> 8)] * 0x5; //The sprites are 5 bytes long therefore we need to implement a 0x5 offset to find each char
+					PC += 2;
+					break;
 				case 0x0033: // FX33: Stores the binary-coded decimal representation of VX, with the most significant of three digits at the address in I, the middle digit at I plus 1,
 							 // and the least significant digit at I plus 2. 
 							 //(In other words, take the decimal representation of VX, place the hundreds digit in memory at location in I,
@@ -188,9 +199,16 @@ void chip8::emulateCycle()
 					Memory[I + 2] = (V[(OPCode & 0x0F00) >> 8] % 100) % 10;   //Get the least significant digit
 					PC += 2;
 					break;
+				case 0x0065: // FX65: Fills V0 to VX (including VX) with values from memory starting at address I.
+					for (int i = 0; i < ((OPCode & 0x0F00) >> 8); i++) {
+						V[i] = Memory[I + i];
+					}
+					// On the original CHIP-8 and CHIP-48, when the operation is done, I = I + X + 1.
+					I += ((OPCode & 0x0F00) >> 8) + 1;
+					PC += 2;
+					break;
 				default:
 					printf("Unknown opcode: 0x%X\n", OPCode);
-					break;
 			}
 			break;
 		default:
