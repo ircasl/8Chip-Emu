@@ -126,6 +126,18 @@ void chip8::emulateCycle()
 			else // We still need to read the next if instruction even if VX != NN
 				PC += 2;
 			break;
+		case 0x4000:// 4XNN: Skips the next instruction if VX doesn't equal NN. (Usually the next instruction is a jump to skip a code block)
+			if (V[(OPCode & 0x0F00) >> 8] != (OPCode & 0x00FF))
+				PC += 4;
+			else // We still need to read the next if instruction even if VX == NN
+				PC += 2;
+			break;
+		case 0x5000:// 5XY0: Skips the next instruction if VX equals VY. (Usually the next instruction is a jump to skip a code block)
+			if (V[(OPCode & 0x0F00) >> 8] == V[(OPCode & 0x00F0) >> 4])
+				PC += 4;
+			else // We still need to read the next if instruction even if VX != VY
+				PC += 2;
+			break;
 		case 0x6000:// 6XNN: Sets VX to NN.
 			V[(OPCode & 0x0F00) >> 8] = OPCode & 0x00FF; //Don't forget to shift the value 8 bitsso that it represents the value that we want
 			PC += 2;
@@ -133,6 +145,69 @@ void chip8::emulateCycle()
 		case 0x7000:// 7XNN: Adds NN to VX. (Carry flag is not changed)
 			V[(OPCode & 0x0F00) >> 8] += OPCode & 0x00FF;
 			PC += 2;
+			break;
+		case 0x8000:
+			switch (OPCode & 0x000F)
+			{
+			case 0x0000: // 8XY0: Sets VX to the value of VY.
+				V[(OPCode & 0x0F00) >> 8] = V[(OPCode & 0x00F0) >> 4];
+				PC += 2; //Skip to the next instruction
+				break;
+			case 0x0001: // 8XY1: Sets VX to VX or VY. (Bitwise OR operation)
+				V[(OPCode & 0x0F00) >> 8] = (V[(OPCode & 0x0F00) >> 8] | V[(OPCode & 0x00F0) >> 4]);
+				PC += 2;
+				break;
+			case 0x0002: // 8XY2: Sets VX to VX and VY. (Bitwise AND operation)
+				V[(OPCode & 0x0F00) >> 8] = (V[(OPCode & 0x0F00) >> 8] & V[(OPCode & 0x00F0) >> 4]);
+				PC += 2;
+				break;
+			case 0x0003:// 8XY3: Sets VX to VX xor VY.
+				V[(OPCode & 0x0F00) >> 8] = (V[(OPCode & 0x0F00) >> 8] ^ V[(OPCode & 0x00F0) >> 4]);
+				PC += 2;
+				break;
+			case 0x0004:// 8XY4: Adds VY to VX. VF is set to 1 when there's a carry, and to 0 when there isn't.
+				if (V[(OPCode & 0x00F0) >> 4] > (0xFF - V[(OPCode & 0x0F00) >> 8])) //If VY > 0xFF - VX then VX+VY will have a carry
+					V[0xF] = 1; //carry
+				else
+					V[0xF] = 0;
+				V[(OPCode & 0x0F00) >> 8] = (V[(OPCode & 0x0F00) >> 8] + V[(OPCode & 0x00F0) >> 4]);
+				PC += 2;
+				break;
+			case 0x0005:// 8XY5: VY is subtracted from VX. VF is set to 0 when there's a borrow, and 1 when there isn't.
+				if (V[(OPCode & 0x00F0) >> 4] > V[(OPCode & 0x0F00) >> 8]) //If VY > 0xFF - VX then VX+VY will have a carry
+					V[0xF] = 0; //borrow
+				else
+					V[0xF] = 1;
+				V[(OPCode & 0x0F00) >> 8] = (V[(OPCode & 0x0F00) >> 8] - V[(OPCode & 0x00F0) >> 4]);
+				PC += 2;
+				break;
+			case 0x0006:// 8XY6: Stores the least significant bit of VX in VF and then shifts VX to the right by 1
+				V[0xF] = V[(OPCode & 0x0F00) >> 8] & 0x0001;
+				V[(OPCode & 0x0F00) >> 8] = (V[(OPCode & 0x0F00) >> 8] >> 1); //shift to right by one
+				PC += 2;
+				break;
+			case 0x0007:// 8XY7: Sets VX to VY minus VX. VF is set to 0 when there's a borrow, and 1 when there isn't.
+				if (V[(OPCode & 0x0F00) >> 8] > V[(OPCode & 0x00F0) >> 4]) //If VY > 0xFF - VX then VX+VY will have a carry
+					V[0xF] = 0; //borrow
+				else
+					V[0xF] = 1;
+				V[(OPCode & 0x0F00) >> 8] = (V[(OPCode & 0x00F0) >> 4] - V[(OPCode & 0x0F00) >> 8]);
+				PC += 2;
+				break;
+			case 0x000E:// 8XYE: Stores the most significant bit of VX in VF and then shifts VX to the left by 1.
+				V[0xF] = V[(OPCode & 0x0F00) >> 8] >> 7; //Shift 7 bits to the right to get the most significant bit only
+				V[(OPCode & 0x0F00) >> 8] = (V[(OPCode & 0x0F00) >> 8] << 1); //shift to right by one
+				PC += 2;
+				break;
+			default:
+				printf("Unknown opcode: 0x%X\n", OPCode);
+			}
+			break;
+		case 0x9000:// 9XY0: Skips the next instruction if VX doesn't equal VY. (Usually the next instruction is a jump to skip a code block)
+			if (V[(OPCode & 0x0F00) >> 8] != V[(OPCode & 0x00F0) >> 4])
+				PC += 4;
+			else // We still need to read the next if instruction even if VX == VY
+				PC += 2;
 			break;
 		case 0xA000: // ANNN: Sets I to the address NNN.
 			I = OPCode & 0x0FFF;

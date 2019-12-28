@@ -23,6 +23,8 @@ struct WindowSize {
 	int& dh = display_height;
 }WS;
 
+chip8 CPU;
+
 // Let's declare all callBackFunctions here
 static void error_callback(int error, const char* description);
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
@@ -36,8 +38,6 @@ int main(int argc, char** argv)
 		printf("usage: 8chip-emu.exe chip8app\n\n");
 		return 1;
 	}
-
-	chip8 CPU;
 
 	//// Call out Chip8 interpreter so that it loads the game to memory
 	if (!CPU.loadApplication(argv[1]))
@@ -99,8 +99,128 @@ int main(int argc, char** argv)
 // OpenGL keyProcessing
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-		glfwSetWindowShouldClose(window, GLFW_TRUE);
+	if (action == GLFW_PRESS) {
+		switch (key)
+		{
+		case GLFW_KEY_ESCAPE:
+			glfwSetWindowShouldClose(window, GLFW_TRUE);
+			break;
+
+		case GLFW_KEY_1:
+			CPU.Key[0x1] = 1;
+			break;
+		case GLFW_KEY_2:
+			CPU.Key[0x2] = 1;
+			break;
+		case GLFW_KEY_3:
+			CPU.Key[0x3] = 1;
+			break;
+		case GLFW_KEY_4:
+			CPU.Key[0xC] = 1;
+			break;
+
+		case GLFW_KEY_Q:
+			CPU.Key[0x4] = 1;
+			break;
+		case GLFW_KEY_W:
+			CPU.Key[0x5] = 1;
+			break;
+		case GLFW_KEY_E:
+			CPU.Key[0x6] = 1;
+			break;
+		case GLFW_KEY_R:
+			CPU.Key[0xD] = 1;
+			break;
+
+		case GLFW_KEY_A:
+			CPU.Key[0x7] = 1;
+			break;
+		case GLFW_KEY_S:
+			CPU.Key[0x8] = 1;
+			break;
+		case GLFW_KEY_D:
+			CPU.Key[0x9] = 1;
+			break;
+		case GLFW_KEY_F:
+			CPU.Key[0xE] = 1;
+			break;
+
+		case GLFW_KEY_Z:
+			CPU.Key[0xA] = 1;
+			break;
+		case GLFW_KEY_X:
+			CPU.Key[0x0] = 1;
+			break;
+		case GLFW_KEY_C:
+			CPU.Key[0xB] = 1;
+			break;
+		case GLFW_KEY_V:
+			CPU.Key[0xF] = 1;
+			break;
+
+		default:
+			break;
+		}
+	}
+	else if (action == GLFW_RELEASE) {
+		switch (key)
+		{
+		case GLFW_KEY_1:
+			CPU.Key[0x1] = 0;
+			break;
+		case GLFW_KEY_2:
+			CPU.Key[0x2] = 0;
+			break;
+		case GLFW_KEY_3:
+			CPU.Key[0x3] = 0;
+			break;
+		case GLFW_KEY_4:
+			CPU.Key[0xC] = 0;
+			break;
+
+		case GLFW_KEY_Q:
+			CPU.Key[0x4] = 0;
+			break;
+		case GLFW_KEY_W:
+			CPU.Key[0x5] = 0;
+			break;
+		case GLFW_KEY_E:
+			CPU.Key[0x6] = 0;
+			break;
+		case GLFW_KEY_R:
+			CPU.Key[0xD] = 0;
+			break;
+
+		case GLFW_KEY_A:
+			CPU.Key[0x7] = 0;
+			break;
+		case GLFW_KEY_S:
+			CPU.Key[0x8] = 0;
+			break;
+		case GLFW_KEY_D:
+			CPU.Key[0x9] = 0;
+			break;
+		case GLFW_KEY_F:
+			CPU.Key[0xE] = 0;
+			break;
+
+		case GLFW_KEY_Z:
+			CPU.Key[0xA] = 0;
+			break;
+		case GLFW_KEY_X:
+			CPU.Key[0x0] = 0;
+			break;
+		case GLFW_KEY_C:
+			CPU.Key[0xB] = 0;
+			break;
+		case GLFW_KEY_V:
+			CPU.Key[0xF] = 0;
+			break;
+
+		default:
+			break;
+		}
+	}
 }
 
 // OpenGL error callback function
