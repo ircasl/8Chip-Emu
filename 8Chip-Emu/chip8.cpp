@@ -72,9 +72,9 @@ void chip8::debugRender()
 		for (int x = 0; x < 64; x++)
 		{
 			if (GFX[(y * 64) + x] == 0)
-				printf("O");
-			else
 				printf(" ");
+			else
+				printf("O");
 		}
 		printf("\n");
 	}
@@ -89,6 +89,8 @@ void chip8::emulateCycle()
 	// Memory[PC] << 8 shift the memory value 8 bits to the left ???? ???? 0000 0000 
 	// And after the result value | Memory[PC + 1] witch takes the most right 8 bits of the result that are all 0 and change them to Memory[PC + 1] value.
 	// Using this operations we get the 2 bytes we wanted from the program
+
+	printf("Exec OPCode: %#010x\n", OPCode);
 
 	// Decode Opcode
 	// Execute Opcode
@@ -196,7 +198,7 @@ void chip8::emulateCycle()
 				break;
 			case 0x000E:// 8XYE: Stores the most significant bit of VX in VF and then shifts VX to the left by 1.
 				V[0xF] = V[(OPCode & 0x0F00) >> 8] >> 7; //Shift 7 bits to the right to get the most significant bit only
-				V[(OPCode & 0x0F00) >> 8] = (V[(OPCode & 0x0F00) >> 8] << 1); //shift to right by one
+				V[(OPCode & 0x0F00) >> 8] = (V[(OPCode & 0x0F00) >> 8] << 1); //shift to left by one
 				PC += 2;
 				break;
 			default:
@@ -218,6 +220,7 @@ void chip8::emulateCycle()
 			break;
 		case 0xC000:// CXNN: Sets VX to the result of a bitwise and operation on a random number (Typically: 0 to 255) and NN.
 			V[OPCode & 0x0F00 >> 8] = (OPCode & 0x00FF) & (rand() % 0x00FF);
+			PC += 2;
 			break;
 		case 0xD000: // DXYN: Draws a sprite at coordinate (VX, VY) that has a width of 8 pixels and a height of N pixels.
 					 // Each row of 8 pixels is read as bit-coded starting from memory location I;
@@ -355,8 +358,16 @@ void chip8::emulateCycle()
 			printf("Unknown opcode: 0x%X\n", OPCode);
 	}
 
-
 	// Update timers
+	if (DelayTimer > 0)
+		DelayTimer--;
+
+	if (SoundTimer > 0)
+	{
+		if (SoundTimer == 1)
+			printf("BEEP!\n");
+		SoundTimer--;
+	}
 }
 
 bool chip8::loadApplication(const char* filename)

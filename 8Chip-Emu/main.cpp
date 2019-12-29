@@ -79,7 +79,7 @@ int main(int argc, char** argv)
 			glClear(GL_COLOR_BUFFER_BIT);
 
 			//For now let's use the debug render
-			//CPU.debugRender(); 
+			CPU.debugRender(); 
 
 			// Swap front and back buffers 
 			glfwSwapBuffers(window);
