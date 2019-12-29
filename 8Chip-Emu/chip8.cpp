@@ -182,7 +182,7 @@ void chip8::emulateCycle()
 				PC += 2;
 				break;
 			case 0x0006:// 8XY6: Stores the least significant bit of VX in VF and then shifts VX to the right by 1
-				V[0xF] = V[(OPCode & 0x0F00) >> 8] & 0x0001;
+				V[0xF] = V[(OPCode & 0x0F00) >> 8] & 0x01;
 				V[(OPCode & 0x0F00) >> 8] = (V[(OPCode & 0x0F00) >> 8] >> 1); //shift to right by one
 				PC += 2;
 				break;
@@ -212,6 +212,12 @@ void chip8::emulateCycle()
 		case 0xA000: // ANNN: Sets I to the address NNN.
 			I = OPCode & 0x0FFF;
 			PC += 2;
+			break;
+		case 0xB000:// BNNN: Jumps to the address NNN plus V0.
+			PC = (OPCode & 0x0FFF) + V[0];
+			break;
+		case 0xC000:// CXNN: Sets VX to the result of a bitwise and operation on a random number (Typically: 0 to 255) and NN.
+			V[OPCode & 0x0F00 >> 8] = (OPCode & 0x00FF) & (rand() % 0x00FF);
 			break;
 		case 0xD000: // DXYN: Draws a sprite at coordinate (VX, VY) that has a width of 8 pixels and a height of N pixels.
 					 // Each row of 8 pixels is read as bit-coded starting from memory location I;
@@ -250,6 +256,25 @@ void chip8::emulateCycle()
 				PC += 2;
 			}
 			break;
+		case 0xE000:
+			switch (OPCode & 0x00FF)
+			{
+			case 0x009E:// EX9E: Skips the next instruction if the key stored in VX is pressed. (Usually the next instruction is a jump to skip a code block)
+				if (Key[V[(OPCode & 0x0F00) >> 8]] == 1)
+					PC += 4;
+				else
+					PC += 2;
+				break;
+			case 0x00A1:// EXA1: Skips the next instruction if the key stored in VX isn't pressed. (Usually the next instruction is a jump to skip a code block)
+				if (Key[V[(OPCode & 0x0F00) >> 8]] == 0)
+					PC += 4;
+				else
+					PC += 2;
+				break;
+			default:
+				printf("Unknown opcode: 0x%X\n", OPCode);
+			}
+			break;
 		case 0xF000:
 			switch (OPCode & 0x00FF)
 			{
@@ -257,8 +282,41 @@ void chip8::emulateCycle()
 					V[(OPCode & 0x0F00) >> 8] = DelayTimer;
 					PC += 2;
 					break;
+				case 0x000A:// FX0A: A key press is awaited, and then stored in VX. (Blocking Operation. All instruction halted until next key event)
+					{
+					bool keyPressed = false;
+
+					for (int i = 0; i < 16; ++i) //Maybe add a or keyPressed inside the for condition
+					{
+						if (Key[i] != 0)
+						{
+							V[(OPCode & 0x0F00) >> 8] = i;
+							keyPressed = true;
+						}
+					}
+
+					// If we didn't received a keypress, skip this cycle and try again.
+					if (!keyPressed)
+						return;
+
+					PC += 2;
+					}
+					break;
 				case 0x0015:// FX15: Sets the delay timer to VX.
 					DelayTimer = V[(OPCode & 0x0F00) >> 8];
+					PC += 2;
+					break;
+				case 0x0018:// FX18: Sets the sound timer to VX.
+					SoundTimer = V[(OPCode & 0x0F00) >> 8];
+					PC += 2;
+					break;
+				case 0x001E:// FX1E: Adds VX to I. VF is set to 1 when there is a range overflow (I+VX>0xFFF), and to 0 when there isn't.
+					if (I + V[(OPCode & 0x0F00) >> 8] > 0x0FFF)
+						V[0xF] = 1;
+					else
+						V[0xF] = 0;
+
+					I = I + V[(OPCode & 0x0F00) >> 8];
 					PC += 2;
 					break;
 				case 0x0029:// FX29: Sets I to the location of the sprite for the character in VX. Characters 0-F (in hexadecimal) are represented by a 4x5 font.
@@ -272,6 +330,13 @@ void chip8::emulateCycle()
 					Memory[I] = V[(OPCode & 0x0F00) >> 8] / 100; //Get the most significant digit
 					Memory[I + 1] = (V[(OPCode & 0x0F00) >> 8] / 10) % 10;   //Get the middle digit
 					Memory[I + 2] = (V[(OPCode & 0x0F00) >> 8] % 100) % 10;   //Get the least significant digit
+					PC += 2;
+					break;
+				case 0x0055:// FX55: Stores V0 to VX (including VX) in memory starting at address I. The offset from I is increased by 1 for each value written, but I itself is left unmodified.
+					for (int i = 0; i <= ((OPCode & 0x0F00) >> 8); ++i)
+						Memory[I + i] = V[i];
+					// On the original CHIP-8 and CHIP-48, when the operation is done, I = I + X + 1.
+					I += ((OPCode & 0x0F00) >> 8) + 1;
 					PC += 2;
 					break;
 				case 0x0065: // FX65: Fills V0 to VX (including VX) with values from memory starting at address I.
