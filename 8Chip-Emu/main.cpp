@@ -11,13 +11,13 @@
 #define SCREEN_WIDTH 64
 #define SCREEN_HEIGHT 32
 
-// Let's define a initial zoom so that we can see the display better 
-#define INITIAL_ZOOM 10 
+// Let's define a zoom so that we can see the display better 
+int ZOOM = 10;
 
 // Actual Window size
 struct WindowSize {
-	int display_width = SCREEN_WIDTH * INITIAL_ZOOM;
-	int display_height = SCREEN_HEIGHT * INITIAL_ZOOM;
+	int display_width = SCREEN_WIDTH * ZOOM;
+	int display_height = SCREEN_HEIGHT * ZOOM;
 
 	int& dw = display_width; //Make some references so that the code is easier to read
 	int& dh = display_height;
@@ -26,8 +26,10 @@ struct WindowSize {
 chip8 CPU;
 
 // Let's declare all callBackFunctions here
+void window_size_callback(GLFWwindow* window, int width, int height);
 static void error_callback(int error, const char* description);
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+void updateQuads(const chip8& c8);
 
 int main(int argc, char** argv)
 {
@@ -61,11 +63,20 @@ int main(int argc, char** argv)
 		return -1;
 	}
 
+	//Set window resize callback
+	glfwSetWindowSizeCallback(window, window_size_callback);
+
 	//Set key processing for the window
 	glfwSetKeyCallback(window, key_callback);
 
 	// Make the window's context current 
 	glfwMakeContextCurrent(window);
+
+	//Initial window setup before the loop
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glOrtho(0, WS.dw, WS.dh, 0, -1, 1); //Multiply the current matrix with an orthographic matrix so that we're able to see the vertexs | the zFar and zNear are given taking account the way the vertexs are defined
+	glMatrixMode(GL_MODELVIEW);
 
 	// Loop until the user closes the window 
 	while (!glfwWindowShouldClose(window))
@@ -79,8 +90,10 @@ int main(int argc, char** argv)
 			glClear(GL_COLOR_BUFFER_BIT);
 
 			//For now let's use the debug render
-			CPU.debugRender(); 
+			//CPU.debugRender(); 
 
+			updateQuads(CPU);
+			
 			// Swap front and back buffers 
 			glfwSwapBuffers(window);
 
@@ -95,6 +108,52 @@ int main(int argc, char** argv)
 	glfwTerminate();
 	return 0;
 }
+
+// Old gfx code
+void drawPixel(int x, int y)
+{
+	//Let's draw a single pixel(a quad) using 2 triangles
+	glBegin(GL_TRIANGLES);
+		glVertex3f(0.0f + (x * ZOOM), (y * ZOOM) + ZOOM, 1.0f); // Top Left
+		glVertex3f((x * ZOOM) + ZOOM, (y * ZOOM) + ZOOM, 1.0f); // Top Right 
+		glVertex3f((x * ZOOM) + ZOOM, (y * ZOOM) + 0.0f, 1.0f); // Bottom Right
+
+		glVertex3f((x * ZOOM) + 0.0f, (y * ZOOM) + 0.0f, 1.0f); // Bottom Left
+		glVertex3f((x * ZOOM) + ZOOM, (y * ZOOM) + 0.0f, 0.0f); // Bottom Right
+		glVertex3f((x * ZOOM) + 0.0f, (y * ZOOM) + ZOOM, 0.0f); // Top Left
+	glEnd();
+}
+
+void updateQuads(const chip8& c8)
+{
+	// Let's cycle through VRAM and draw every pixel
+	for (int Y = 0; Y < 32; Y++)
+		for (int X = 0; X < 64; X++)
+		{
+			if (c8.GFX[(Y * 64) + X] == 0)
+				glColor3f(0.0f, 0.0f, 0.0f);
+			else
+				glColor3f(1.0f, 1.0f, 1.0f);
+
+			drawPixel(X, Y);
+		}
+}
+
+//OpenGL window resize
+void window_size_callback(GLFWwindow* window, int width, int height)
+{
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glOrtho(0, width, height, 0, -1, 1); //Multiply the current matrix with an orthographic matrix so that we're able to see the vertexs | the zFar and zNear are given taking account the way the vertexs are defined
+	glMatrixMode(GL_MODELVIEW);
+
+	glViewport(0, 0, width, height); //Change the view port if needed
+
+	// Resize quad
+	WS.display_width = width;
+	WS.display_height = height;
+}
+
 
 // OpenGL keyProcessing
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
