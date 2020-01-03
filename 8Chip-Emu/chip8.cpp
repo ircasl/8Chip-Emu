@@ -240,7 +240,7 @@ void chip8::emulateCycle()
 		break;
 
 		case 0xC000:// CXNN: Sets VX to the result of a bitwise and operation on a random number (Typically: 0 to 255) and NN.
-			V[OPCode & 0x0F00 >> 8] = (OPCode & 0x00FF) & (rand() % 0x00FF);
+			V[(OPCode & 0x0F00) >> 8] = (rand() % 0x00FF) & (OPCode & 0x00FF);
 			PC += 2;
 		break;
 
