@@ -99,17 +99,17 @@ void chip8::emulateCycle()
 		case 0x0000:
 			switch (OPCode & 0x00FF)
 			{
-				case 0x00EE: // 00EE: Returns from a subroutine.
-					SP--; // 16 levels of stack, decrease stack pointer to prevent overwrite
-					PC = Stack[SP]; //Set the program counter to the saved value on the stack
-					PC += 2; //Skip to the next instruction
-					break;
-
 				case 0x00E0: // 00E0: Clears the screen.
 					memset(GFX, 0, sizeof(GFX)); //GFX[2048] 
 					DrawFlag = true; //Let's set this so that the draw logic knows that it needs to redraw
 					PC += 2;
-					break;
+				break;
+
+				case 0x00EE: // 00EE: Returns from a subroutine.
+					SP--; // 16 levels of stack, decrease stack pointer to prevent overwrite
+					PC = Stack[SP]; //Set the program counter to the saved value on the stack
+					PC += 2; //Skip to the next instruction
+				break;
 
 				default:
 					// TODO: Add 0NNN
@@ -118,44 +118,44 @@ void chip8::emulateCycle()
 			break;
 		case 0x1000:// 1NNN: Jumps to address NNN.
 			PC = OPCode & 0x0FFF;
-			break;
+		break;
 
 		case 0x2000:// 0x2NNN: Calls subroutine at NNN.
 			Stack[SP] = PC; // Let's save the current adress to the stack
 			SP++; // Increment the stack pointer
 			PC = OPCode & 0x0FFF; // Let's save the only the NNN value to the PC
-			break;
+		break;
 
 		case 0x3000:// 3XNN: Skips the next instruction if VX equals NN. (Usually the next instruction is a jump to skip a code block)
 			if (V[(OPCode & 0x0F00) >> 8] == (OPCode & 0x00FF))
 				PC += 4;
 			else // We still need to read the next if instruction even if VX != NN
 				PC += 2;
-			break;
+		break;
 
 		case 0x4000:// 4XNN: Skips the next instruction if VX doesn't equal NN. (Usually the next instruction is a jump to skip a code block)
 			if (V[(OPCode & 0x0F00) >> 8] != (OPCode & 0x00FF))
 				PC += 4;
 			else // We still need to read the next if instruction even if VX == NN
 				PC += 2;
-			break;
+		break;
 
 		case 0x5000:// 5XY0: Skips the next instruction if VX equals VY. (Usually the next instruction is a jump to skip a code block)
 			if (V[(OPCode & 0x0F00) >> 8] == V[(OPCode & 0x00F0) >> 4])
 				PC += 4;
 			else // We still need to read the next if instruction even if VX != VY
 				PC += 2;
-			break;
+		break;
 
 		case 0x6000:// 6XNN: Sets VX to NN.
 			V[(OPCode & 0x0F00) >> 8] = OPCode & 0x00FF; //Don't forget to shift the value 8 bitsso that it represents the value that we want
 			PC += 2;
-			break;
+		break;
 
 		case 0x7000:// 7XNN: Adds NN to VX. (Carry flag is not changed)
 			V[(OPCode & 0x0F00) >> 8] += OPCode & 0x00FF;
 			PC += 2;
-			break;
+		break;
 
 		case 0x8000:
 			switch (OPCode & 0x000F)
@@ -163,22 +163,22 @@ void chip8::emulateCycle()
 			case 0x0000: // 8XY0: Sets VX to the value of VY.
 				V[(OPCode & 0x0F00) >> 8] = V[(OPCode & 0x00F0) >> 4];
 				PC += 2; //Skip to the next instruction
-				break;
+			break;
 
 			case 0x0001: // 8XY1: Sets VX to VX or VY. (Bitwise OR operation)
 				V[(OPCode & 0x0F00) >> 8] = (V[(OPCode & 0x0F00) >> 8] | V[(OPCode & 0x00F0) >> 4]);
 				PC += 2;
-				break;
+			break;
 
 			case 0x0002: // 8XY2: Sets VX to VX and VY. (Bitwise AND operation)
 				V[(OPCode & 0x0F00) >> 8] = (V[(OPCode & 0x0F00) >> 8] & V[(OPCode & 0x00F0) >> 4]);
 				PC += 2;
-				break;
+			break;
 
 			case 0x0003:// 8XY3: Sets VX to VX xor VY.
 				V[(OPCode & 0x0F00) >> 8] = (V[(OPCode & 0x0F00) >> 8] ^ V[(OPCode & 0x00F0) >> 4]);
 				PC += 2;
-				break;
+			break;
 
 			case 0x0004:// 8XY4: Adds VY to VX. VF is set to 1 when there's a carry, and to 0 when there isn't.
 				if (V[(OPCode & 0x00F0) >> 4] > (0xFF - V[(OPCode & 0x0F00) >> 8])) //If VY > 0xFF - VX then VX+VY will have a carry
@@ -187,7 +187,7 @@ void chip8::emulateCycle()
 					V[0xF] = 0;
 				V[(OPCode & 0x0F00) >> 8] = (V[(OPCode & 0x0F00) >> 8] + V[(OPCode & 0x00F0) >> 4]);
 				PC += 2;
-				break;
+			break;
 
 			case 0x0005:// 8XY5: VY is subtracted from VX. VF is set to 0 when there's a borrow, and 1 when there isn't.
 				if (V[(OPCode & 0x00F0) >> 4] > V[(OPCode & 0x0F00) >> 8]) //If VY > 0xFF - VX then VX+VY will have a carry
@@ -196,13 +196,13 @@ void chip8::emulateCycle()
 					V[0xF] = 1;
 				V[(OPCode & 0x0F00) >> 8] = (V[(OPCode & 0x0F00) >> 8] - V[(OPCode & 0x00F0) >> 4]);
 				PC += 2;
-				break;
+			break;
 
 			case 0x0006:// 8XY6: Stores the least significant bit of VX in VF and then shifts VX to the right by 1
 				V[0xF] = V[(OPCode & 0x0F00) >> 8] & 0x01;
 				V[(OPCode & 0x0F00) >> 8] = (V[(OPCode & 0x0F00) >> 8] >> 1); //shift to right by one
 				PC += 2;
-				break;
+			break;
 
 			case 0x0007:// 8XY7: Sets VX to VY minus VX. VF is set to 0 when there's a borrow, and 1 when there isn't.
 				if (V[(OPCode & 0x0F00) >> 8] > V[(OPCode & 0x00F0) >> 4]) //If VY > 0xFF - VX then VX+VY will have a carry
@@ -211,13 +211,13 @@ void chip8::emulateCycle()
 					V[0xF] = 1;
 				V[(OPCode & 0x0F00) >> 8] = (V[(OPCode & 0x00F0) >> 4] - V[(OPCode & 0x0F00) >> 8]);
 				PC += 2;
-				break;
+			break;
 
 			case 0x000E:// 8XYE: Stores the most significant bit of VX in VF and then shifts VX to the left by 1.
 				V[0xF] = V[(OPCode & 0x0F00) >> 8] >> 7; //Shift 7 bits to the right to get the most significant bit only
 				V[(OPCode & 0x0F00) >> 8] = (V[(OPCode & 0x0F00) >> 8] << 1); //shift to left by one
 				PC += 2;
-				break;
+			break;
 
 			default:
 				printf("Unknown opcode: 0x%X\n", OPCode);
@@ -228,21 +228,21 @@ void chip8::emulateCycle()
 				PC += 4;
 			else // We still need to read the next if instruction even if VX == VY
 				PC += 2;
-			break;
+		break;
 
 		case 0xA000: // ANNN: Sets I to the address NNN.
 			I = OPCode & 0x0FFF;
 			PC += 2;
-			break;
+		break;
 
 		case 0xB000:// BNNN: Jumps to the address NNN plus V0.
 			PC = (OPCode & 0x0FFF) + V[0];
-			break;
+		break;
 
 		case 0xC000:// CXNN: Sets VX to the result of a bitwise and operation on a random number (Typically: 0 to 255) and NN.
 			V[OPCode & 0x0F00 >> 8] = (OPCode & 0x00FF) & (rand() % 0x00FF);
 			PC += 2;
-			break;
+		break;
 
 		case 0xD000: // DXYN: Draws a sprite at coordinate (VX, VY) that has a width of 8 pixels and a height of N pixels.
 					 // Each row of 8 pixels is read as bit-coded starting from memory location I;
@@ -280,7 +280,7 @@ void chip8::emulateCycle()
 				DrawFlag = true;
 				PC += 2;
 			}
-			break;
+		break;
 
 		case 0xE000:
 			switch (OPCode & 0x00FF)
@@ -290,14 +290,14 @@ void chip8::emulateCycle()
 					PC += 4;
 				else
 					PC += 2;
-				break;
+			break;
 
 			case 0x00A1:// EXA1: Skips the next instruction if the key stored in VX isn't pressed. (Usually the next instruction is a jump to skip a code block)
 				if (Key[V[(OPCode & 0x0F00) >> 8]] == 0)
 					PC += 4;
 				else
 					PC += 2;
-				break;
+			break;
 
 			default:
 				printf("Unknown opcode: 0x%X\n", OPCode);
@@ -309,7 +309,7 @@ void chip8::emulateCycle()
 				case 0x0007:// FX07: Sets VX to the value of the delay timer.
 					V[(OPCode & 0x0F00) >> 8] = DelayTimer;
 					PC += 2;
-					break;
+				break;
 
 				case 0x000A:// FX0A: A key press is awaited, and then stored in VX. (Blocking Operation. All instruction halted until next key event)
 					{
@@ -330,17 +330,17 @@ void chip8::emulateCycle()
 
 					PC += 2;
 					}
-					break;
+				break;
 
 				case 0x0015:// FX15: Sets the delay timer to VX.
 					DelayTimer = V[(OPCode & 0x0F00) >> 8];
 					PC += 2;
-					break;
+				break;
 
 				case 0x0018:// FX18: Sets the sound timer to VX.
 					SoundTimer = V[(OPCode & 0x0F00) >> 8];
 					PC += 2;
-					break;
+				break;
 
 				case 0x001E:// FX1E: Adds VX to I. VF is set to 1 when there is a range overflow (I+VX>0xFFF), and to 0 when there isn't.
 					if (I + V[(OPCode & 0x0F00) >> 8] > 0x0FFF)
@@ -350,12 +350,12 @@ void chip8::emulateCycle()
 
 					I = I + V[(OPCode & 0x0F00) >> 8];
 					PC += 2;
-					break;
+				break;
 
 				case 0x0029:// FX29: Sets I to the location of the sprite for the character in VX. Characters 0-F (in hexadecimal) are represented by a 4x5 font.
 					I = V[((OPCode & 0x0F00) >> 8)] * 0x5; //The sprites are 5 bytes long therefore we need to implement a 0x5 offset to find each char
 					PC += 2;
-					break;
+				break;
 
 				case 0x0033: // FX33: Stores the binary-coded decimal representation of VX, with the most significant of three digits at the address in I, the middle digit at I plus 1,
 							 // and the least significant digit at I plus 2. 
@@ -365,15 +365,15 @@ void chip8::emulateCycle()
 					Memory[I + 1] = (V[(OPCode & 0x0F00) >> 8] / 10) % 10;   //Get the middle digit
 					Memory[I + 2] = (V[(OPCode & 0x0F00) >> 8] % 100) % 10;   //Get the least significant digit
 					PC += 2;
-					break;
+				break;
 
 				case 0x0055:// FX55: Stores V0 to VX (including VX) in memory starting at address I. The offset from I is increased by 1 for each value written, but I itself is left unmodified.
-					for (int i = 0; i <= ((OPCode & 0x0F00) >> 8); ++i)
+					for (int i = 0; i <= ((OPCode & 0x0F00) >> 8); i++)
 						Memory[I + i] = V[i];
 					// On the original CHIP-8 and CHIP-48, when the operation is done, I = I + X + 1.
 					I += ((OPCode & 0x0F00) >> 8) + 1;
 					PC += 2;
-					break;
+				break;
 
 				case 0x0065: // FX65: Fills V0 to VX (including VX) with values from memory starting at address I.
 					for (int i = 0; i < ((OPCode & 0x0F00) >> 8); i++) {
@@ -382,7 +382,7 @@ void chip8::emulateCycle()
 					// On the original CHIP-8 and CHIP-48, when the operation is done, I = I + X + 1.
 					I += ((OPCode & 0x0F00) >> 8) + 1;
 					PC += 2;
-					break;
+				break;
 
 				default:
 					printf("Unknown opcode: 0x%X\n", OPCode);
