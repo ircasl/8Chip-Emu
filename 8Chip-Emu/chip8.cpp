@@ -376,7 +376,7 @@ void chip8::emulateCycle()
 				break;
 
 				case 0x0065: // FX65: Fills V0 to VX (including VX) with values from memory starting at address I.
-					for (int i = 0; i < ((OPCode & 0x0F00) >> 8); i++) {
+					for (int i = 0; i <= ((OPCode & 0x0F00) >> 8); i++) {
 						V[i] = Memory[I + i];
 					}
 					// On the original CHIP-8 and CHIP-48, when the operation is done, I = I + X + 1.
