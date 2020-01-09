@@ -1,6 +1,7 @@
 # 8Chip-Emu
 
 A simple 8-Chip emulator writen in C++ using OpenGL for rendering and GLFW for window management.
+
 Based on the work of Laurence Muller.
 <p align="center">
       <img src="Docs/Images/Maze.png">
@@ -10,6 +11,7 @@ Based on the work of Laurence Muller.
 
 ### Windows
 Use Visual Studio 2019 for compilation.
+
 After compilation add glfw3.dll to the same folder as the executable.
 
 Usage:
@@ -34,11 +36,11 @@ Keyboard Mapping:
 
 1234
 
-qwer
+QWER
 
-asdf
+ASDF
 
-zxcv
+ZXCV
 
 ## References
 Helpful resources used when writing this emulator:
