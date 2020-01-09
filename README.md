@@ -21,19 +21,27 @@ The code is platform agnostic so you should be able to use it to build the app f
 
 ## Key Mapping 
 Original Keypad:
+
 123C
+
 456D
+
 789G
+
 A0BF
 
 Keyboard Mapping:
+
 1234
+
 qwer
+
 asdf
+
 zxcv
 
 ## References
-Helpful resources used when writing this
+Helpful resources used when writing this emulator:
 
 - http://www.multigesture.net/articles/how-to-write-an-emulator-chip-8-interpreter/
 - http://en.wikipedia.org/wiki/CHIP-8
